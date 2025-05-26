@@ -1,0 +1,48 @@
+### POST buat user baru
+POST http://localhost:5000/api/register
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "email": "testusesr@example.com",
+  "password": "123"
+}
+
+###
+
+### login update user
+POST http://localhost:5000/api/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "123"
+}
+
+### GET semua user
+GET http://localhost:5000/api/users
+Content-Type: application/json
+
+###
+
+### GET user by ID
+GET http://localhost:5000/api/users/2
+Content-Type: application/json
+
+###
+
+### PUT update user
+PUT http://localhost:5000/api/users/2
+Content-Type: application/json
+
+{
+  "username": "admin2",
+  "email": "updated@example.com",
+  "password": "123"
+}
+
+###
+
+### DELETE user
+DELETE http://localhost:5000/api/users/3
+Content-Type: application/json
