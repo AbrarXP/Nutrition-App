@@ -23,13 +23,38 @@ class _LoginPageState extends State<LoginPage> {
   TextEditingController user = TextEditingController();
   TextEditingController pass = TextEditingController();
 
-  final url = "http://192.168.0.110:5000/api/login";
+  final url = "http://192.168.0.105:5000/api/login";
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Color.fromARGB(255, 246, 143, 33),),
     );
   }
+
+    void showLoadingModal(BuildContext context) {
+      showDialog(
+        barrierDismissible: false,
+        context: context,
+        barrierColor: Colors.black.withOpacity(0.3), // transparan gelap
+        builder: (context) {
+          return Center(
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Padding(
+                padding: EdgeInsets.all(20),
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          );
+        },
+      );
+    }
+
 
   Future<void> loginUser(String username, String password) async {
     try {
@@ -40,12 +65,28 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (response.statusCode == 200) {
+        
         final data = jsonDecode(response.body);
+
         final msg = data['msg'];
+        final String username = data['user']['username'];
+        final int userID = data['user']['userID'];
+        final int bb = data['user']['bb'];
+        final int tb = data['user']['tb'];
+        final int usia = data['user']['usia'];
+        final String jenisKelamin = data['user']['jenis_kelamin'];
 
         await PreferenceService().setLoginStatus(true);
+        await PreferenceService().setUsername(username);
+        await PreferenceService().setUserID(userID);
+        await PreferenceService().setBeratBadan(bb);
+        await PreferenceService().setTinggiBadan(tb);
+        await PreferenceService().setUsia(usia);
+        await PreferenceService().setJenisKelamin(jenisKelamin);
 
+        Navigator.pop(context);
         _showSnackBar(msg);
+
 
         Navigator.push(
           context,
@@ -54,10 +95,12 @@ class _LoginPageState extends State<LoginPage> {
 
       } else {
         _showSnackBar("Login gagal: ${response.body}");
+        Navigator.pop(context);
       }
     } catch (e) {
       print("❌ Login error: $e");
       _showSnackBar("Terjadi kesalahan koneksi");
+      Navigator.pop(context);
     }
   }
   
@@ -124,6 +167,7 @@ class _LoginPageState extends State<LoginPage> {
                             tebalFont: FontWeight.bold,
               
                             fungsiKetikaDitekan: () async{
+                              showLoadingModal(context);
                               await loginUser(user.text, pass.text);
                             },
                           )

@@ -1,6 +1,22 @@
 import User from "../models/userModel.js";
 import jwt from 'jsonwebtoken';
 
+export function caesarEncrypt(text, shift) {
+  return text.split('').map(char => {
+    if (char.match(/[a-z]/)) {
+      return String.fromCharCode(((char.charCodeAt(0) - 97 + shift) % 26) + 97);
+    }
+    if (char.match(/[A-Z]/)) {
+      return String.fromCharCode(((char.charCodeAt(0) - 65 + shift) % 26) + 65);
+    }
+    return char;
+  }).join('');
+}
+
+export function caesarDecrypt(text, shift) {
+  return caesarEncrypt(text, (26 - (shift % 26)) % 26);
+}
+
 // Create user
 export const Register = async(req, res) => {
     const { username, email, password } = req.body;
@@ -15,21 +31,30 @@ export const Register = async(req, res) => {
         const existingUsername = await User.findOne({ where: { username } });
         if (existingUsername) return res.status(400).json({status: "Error", msg: "Username sudah digunakan" });
 
+        // Generate shift secara acak antara 1-26
+        const shift = (Math.floor(Math.random() * 1000) % 26) + 1;
+        const encrypedPassword = caesarEncrypt(password, shift);
         // Simpan user baru
         await User.create({
             username,
             email,
-            password,
+            password: encrypedPassword,
+            shift: shift,
+            bb: 0,
+            tb: 0,
+            usia: 0,
+            jenis_kelamin: "Laki-laki"
         });
 
         res.status(201).json({status: "Sukses", msg: "Registrasi berhasil" });
-    }catch(error){
+          }catch(error){
         res.status(500).json({ msg: error.message });
-    }
+          }
 }
 
+      
 export const Login = async(req, res) => {
-const { username, password } = req.body;
+  const { username, password } = req.body;
   try {
 
     // Cek usernya ada ga
@@ -37,7 +62,7 @@ const { username, password } = req.body;
     if (!user) return res.status(404).json({status: "Error", msg: "User tidak ditemukan" });
 
      // Bandingkan password langsung
-    if (password !== user.password) {
+    if (password !== caesarDecrypt(user.password, user.shift)) {
       return res.status(400).json({ status: "Error", msg: "Password salah" });
     }
 
@@ -45,28 +70,13 @@ const { username, password } = req.body;
     const accessToken = jwt.sign(
       { userId: user.id, username: user.username },
       process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: "5m" }
+      { expiresIn: "24h" }
     );
 
-    const refreshToken = jwt.sign(
-      { userId: user.id },
-      process.env.REFRESH_TOKEN_SECRET,
-      { expiresIn: "1h" }
-    );
-
-    // Kirim via cookie
     res.cookie("accessToken", accessToken, {
-        httpOnly: false,
-        secure: false,
-        sameSite: "None", 
-        maxAge: 5 * 60 * 1000 // 15 menit
-    });
-
-    res.cookie("refreshToken", refreshToken, {
-        httpOnly: false,
-        secure: false,
-        sameSite: "None",
-        maxAge: 60 * 60 * 1000 //1 jam 
+      httpOnly: false,
+      secure: false, // Hanya kirim cookie di HTTPS
+      sameSite: "None", // Mencegah CSRF
     });
 
     res.json({
@@ -74,8 +84,12 @@ const { username, password } = req.body;
     accessToken: accessToken,
       msg: "Login berhasil",
       user: {
-        id: user.id,
+        userID: user.userID,
         username: user.username,
+        bb: user.bb,
+        tb: user.tb,
+        usia: user.usia,
+        jenis_kelamin: user.jenis_kelamin
       }
     });
 
@@ -88,7 +102,7 @@ const { username, password } = req.body;
 export const getUsers = async (req, res) => {
   try {
     const users = await User.findAll({
-      attributes: ["userID", "username", "email"]
+      attributes: ["userID", "username", "email", "bb", "tb", "usia", "jenis_kelamin" ]
     });
     res.json(users);
   } catch (error) {
@@ -100,7 +114,7 @@ export const getUsers = async (req, res) => {
 export const getUserById = async (req, res) => {
   try {
     const user = await User.findByPk(req.params.id, {
-      attributes: ["userID", "username", "email"]
+      attributes: ["userID", "username", "email", "bb", "tb", "usia", "jenis_kelamin" ]
     });
     if (!user) return res.status(404).json({ msg: "User tidak ditemukan" });
     res.json(user);
@@ -111,7 +125,7 @@ export const getUserById = async (req, res) => {
 
 // PUT update user
 export const updateUser = async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, email, password, bb, tb, usia, jenis_kelamin } = req.body;
   try {
     const user = await User.findByPk(req.params.id);
     if (!user) return res.status(404).json({ msg: "User tidak ditemukan" });
@@ -124,10 +138,21 @@ export const updateUser = async (req, res) => {
     const existingUsername = await User.findOne({ where: { username } });
     if (existingUsername) return res.status(400).json({status: "Error", msg: "Username sudah digunakan" });
 
+    const validGender = ["Laki-laki", "Perempuan"];
+    if (!validGender.includes(jenis_kelamin)) {
+      return res.status(400).json({
+        status: "Error",
+        msg: "jenis_kelamin harus 'Laki-laki' atau 'Perempuan'"
+      });
+    }
 
     user.username = username || user.username;
     user.email = email || user.email;
     user.password = password || user.password;
+    user.bb = bb || user.bb;
+    user.tb = tb || user.tb;
+    user.usia = usia || user.usia;
+    user.jenis_kelamin = jenis_kelamin || user.jenis_kelamin;
 
     await user.save();
     res.json({ msg: "User berhasil diupdate", user });

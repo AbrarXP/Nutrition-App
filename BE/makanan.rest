@@ -1,0 +1,46 @@
+### POST buat makanan baru
+POST http://localhost:5000/api/makanan
+Content-Type: application/json
+
+{
+    "userID": "8",
+    "nama_makanan": "biji mata satu"
+}
+
+###
+
+### GET semua makanan
+GET http://localhost:5000/api/makanan
+Content-Type: application/json
+
+### GET semua makanan by date
+GET http://localhost:5000/api/makanan/8?tanggal=2025-05-08
+Content-Type: application/json
+
+###
+
+### GET user by ID
+GET http://localhost:5000/api/users/7
+Content-Type: application/json
+
+###
+
+### PUT update user
+PUT http://localhost:5000/api/users/7
+Content-Type: application/json
+
+{
+  "username": "admin33",
+  "email": "updated23@example.com",
+  "password": "123",
+  "bb": 20,
+  "tb": 180,
+  "usia": 21,
+  "jenis_kelamin": "Laki-laki"
+}
+
+###
+
+### DELETE user
+DELETE http://localhost:5000/api/makanan/3
+Content-Type: application/json

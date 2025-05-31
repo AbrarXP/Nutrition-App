@@ -12,7 +12,12 @@ const User = db.define(
     },
     username: Sequelize.TEXT,
     password: Sequelize.TEXT,
+    shift: DataTypes.INTEGER,
     email: Sequelize.TEXT,
+    bb: DataTypes.DOUBLE,
+    tb: DataTypes.DOUBLE,
+    usia: DataTypes.INTEGER,
+    jenis_kelamin:Sequelize.TEXT
   },
   {
     timestamps: false 
