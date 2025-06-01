@@ -1,16 +1,20 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:app_settings/app_settings.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:tugas_akhir/component/Item_card.dart';
 import 'package:tugas_akhir/component/customTextfield.dart';
 import 'package:tugas_akhir/component/custom_button.dart';
-import 'package:tugas_akhir/component/text/headerText.dart';
 import 'package:tugas_akhir/component/theme/theme.dart';
 import 'package:tugas_akhir/component/video_player.dart';
 import 'package:tugas_akhir/model/foodModel.dart';
-import 'package:timezone/timezone.dart' as timezone;
+import 'package:tugas_akhir/model/placeModel.dart';
 import 'package:tugas_akhir/preferenceService.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,33 +23,110 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 class _HomePageState extends State<HomePage> {
+
+  // Google API Key
+  final googleAPIKey = "AIzaSyCAbTqehKeUWRrQrAg0n8LGfVce5MEXqoE";
+
   TextEditingController ceritaMakananController = TextEditingController();
   int userID = 0;
   List<FoodData> foods = [];
+  List<PlaceData> restaurants = [];
 
+  // Variabel BMI
   int bb = 0;
   int tb = 0 ;
   int usia = 0;
   String jenis_kelamin = "Laki-laki";
 
+
+  // Variabel total nutrisi
   int total_kalori = 0;
   int total_kolestrol = 0;
   int total_protein = 0;
   int total_sodium = 0;
 
   double kebutuhanKaloriHarian = 0;
-  Color warnaBarProgress = Colors.white;
-
+  Color warnaBarProgress = const Color.fromARGB(255, 216, 216, 216);
   double progress = 0;
 
   bool loaded = false;
+  bool RestaurantLoaded = false;
+
+  String? place_url;
+
+  // Variabel Controller Scroll Restaurant GridView
+  final ScrollController _scrollController = ScrollController();
+  late final Timer _timer;
+  double _scrollPosition = 0;
+
+  Timer? _autoScrollTimer;
+  Timer? _userInteractionTimer;
+  bool _autoScrolling = true;
+  final Duration _delayBeforeAutoScroll = Duration(seconds: 2);
+  final double _scrollSpeed = 200;
+
+  // Variabel geolocator
+  bool serviceEnabled = false;
+  LocationPermission permission = LocationPermission.denied;
 
   @override
   void initState(){
     // TODO: implement initState
     super.initState();
     load();
+
+    // Setting scroll
+    setupScrollController();
+    checkPermission();
+    fetchPlace();
+
   }
+
+  // Method ini dipanggil saat user berinteraksi scroll
+  void _onUserInteraction() {
+    if (_autoScrolling) {
+      setState(() {
+        _autoScrolling = false;
+      });
+    }
+
+    // Reset timer setiap user interaksi
+    _userInteractionTimer?.cancel();
+    _userInteractionTimer = Timer(_delayBeforeAutoScroll, () {
+      setState(() {
+        _autoScrolling = true;
+      });
+    });
+  }
+  @override
+  void dispose() {
+    _autoScrollTimer?.cancel();
+    _userInteractionTimer?.cancel();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> checkPermission() async{
+    permission = await Geolocator.checkPermission();
+  }
+
+  void setupScrollController() {
+  _autoScrollTimer = Timer.periodic(Duration(milliseconds: 10), (timer) {
+    if (_autoScrolling && _scrollController.hasClients) {
+      _scrollPosition += _scrollSpeed;
+
+      if (_scrollPosition >= _scrollController.position.maxScrollExtent) {
+        _scrollPosition = 0;
+      }
+
+      _scrollController.animateTo(
+        _scrollPosition,
+        duration: Duration(milliseconds: 3000),
+        curve: Curves.fastOutSlowIn,
+      );
+    }
+  });
+}
 
   void load() async {
     final prefs = PreferenceService();
@@ -105,6 +186,81 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void showLoadingModal(BuildContext context) {
+    showDialog(
+      barrierDismissible: false,
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.3), // transparan gelap
+      builder: (context) {
+        return Center(
+          child: Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Padding(
+              padding: EdgeInsets.all(20),
+              child: CircularProgressIndicator(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> fetchPlace() async {
+
+    Position lokasiUser = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best);
+    String url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lokasiUser.latitude},${lokasiUser.longitude}&radius=10020&type=restaurant&key=$googleAPIKey";
+    
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print(response.body);
+        setState(() {
+          restaurants = (data['results'] as List)
+              .map<PlaceData>((item) => PlaceData.fromJson(item))
+              .toList();
+          _showSnackBar("Ditemukan ${restaurants.length} restoran di sekitar Anda.");
+        });
+        RestaurantLoaded = true;
+      } else {
+        print("❌ Gagal (${response.statusCode}): ${response.body}");
+        _showSnackBar("Gagal mengambil data restoran.");
+      }
+    } catch (e) {
+      print("❗ Error saat mengambil data restoran: $e");
+      _showSnackBar("Terjadi kesalahan saat mengambil data restoran.");
+    }
+  }
+
+  Future<void> fetchDetailPlace(String place_id) async {
+
+    String url = "https://maps.googleapis.com/maps/api/place/details/json?place_id=$place_id&key=$googleAPIKey";
+    
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print(response.body);
+        setState(() {
+          place_url = data['result']['url'];
+        });
+      } else {
+        print("❌ Gagal (${response.statusCode}): ${response.body}");
+        _showSnackBar("Gagal mengambil data restoran.");
+      }
+    } catch (e) {
+      print("❗ Error saat mengambil data restoran: $e");
+      _showSnackBar("Terjadi kesalahan saat mengambil data restoran.");
+    }
+
+  }
+
+
   Future<void> getNutritionixData(String queryText) async {
     const String url = "https://trackapi.nutritionix.com/v2/natural/nutrients";
 
@@ -147,30 +303,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void showLoadingModal(BuildContext context) {
-    showDialog(
-      barrierDismissible: false,
-      context: context,
-      barrierColor: Colors.black.withOpacity(0.3), // transparan gelap
-      builder: (context) {
-        return Center(
-          child: Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Padding(
-              padding: EdgeInsets.all(20),
-              child: CircularProgressIndicator(),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
 
@@ -201,11 +333,14 @@ class _HomePageState extends State<HomePage> {
     return Padding(
             padding: const EdgeInsets.only(left: 8, right: 8),
             child: SingleChildScrollView(
+              physics: ScrollPhysics(parent: BouncingScrollPhysics()),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SizedBox(height: MediaQuery.sizeOf(context).height *0.05,),
                   FormCerita(context),
+                  SizedBox(height: 20,),
+                  listRestaurant(),
                   SizedBox(height: 20,),
                   foods.length < 1 ? SizedBox() : TotalNutrisiCard(context),
                   SizedBox(height: 20,),
@@ -215,6 +350,197 @@ class _HomePageState extends State<HomePage> {
             ),
           );
     }
+
+  ItemCard listRestaurant() {
+    return ItemCard(
+                  backgroundColor: const Color.fromARGB(149, 81, 165, 255),
+                  height: 280,
+                  width: MediaQuery.sizeOf(context).width,
+                  child: permission == LocationPermission.denied ?
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.location_off,
+                        color: const Color.fromARGB(255, 246, 140, 33),
+                        size: 43,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          
+                          Text(
+                            "  Izin lokasi anda di matikan",
+                            style: TextStyle(
+                              color: const Color.fromARGB(255, 255, 255, 255),
+                              fontSize: 15,
+                              fontFamily: "Clash Display",
+                              fontWeight: FontWeight.bold
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 10,),
+                      ElevatedButton.icon(
+                        onPressed: () async{
+                          permission = await Geolocator.requestPermission();
+                          permission = await Geolocator.checkPermission();
+                          
+                        },
+                        icon: Icon(Icons.settings),
+                        label: Text("Izinkan Akses Lokasi"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color.fromARGB(255, 255, 153, 0),
+                          foregroundColor: Colors.white,
+                        ),
+                      )
+                    ],
+                  )
+                  :
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(right: 10, left: 10),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.location_on_sharp,
+                                color: const Color.fromARGB(255, 246, 140, 33),
+                                size: 16,
+                              ),
+                              Text(
+                                "  Restaurant di sekitar anda",
+                                style: TextStyle(
+                                  color: const Color.fromARGB(255, 255, 255, 255),
+                                  fontSize: 15,
+                                  fontFamily: "Clash Display",
+                                  fontWeight: FontWeight.bold
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Divider(),
+                        SizedBox(height: 10,),
+                        RestaurantLoaded == false ? 
+                        Center(child: Column(
+                          children: [
+                            SizedBox(height: 20,),
+                            CircularProgressIndicator(),
+                            SizedBox(height: 10,),
+                            Text(
+                                "Mencari restaurant..",
+                                style: TextStyle(
+                                  color: const Color.fromARGB(255, 255, 255, 255),
+                                  fontSize: 13,
+                                  fontFamily: "Clash Display",
+                                ),
+                              ),
+                          ],
+                        ),)
+                        :
+                        SizedBox(
+                          height: 160,
+                          width: MediaQuery.sizeOf(context).width,
+                          child: NotificationListener<ScrollNotification>(
+                            onNotification: (scrollNotification) {
+                              if (scrollNotification is ScrollStartNotification ||
+                                  scrollNotification is ScrollUpdateNotification ||
+                                  scrollNotification is ScrollEndNotification) {
+                                _onUserInteraction();
+                              }
+                              return false; // lanjutkan event supaya scroll tetap jalan
+                            },
+                            child: GridView.builder(
+                              controller: _scrollController,
+                              scrollDirection: Axis.horizontal,
+                              itemCount: 10,
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 1, // 2 baris
+                                mainAxisSpacing: 10,
+                                crossAxisSpacing: 10,
+                                childAspectRatio: 1, // 1:1 bentuk kotak
+                              ),
+                              itemBuilder: (context, index) {
+                                final restaurant = restaurants[index];
+                                final photoUrl = 'https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${restaurant.photos![0].photoReference}&key=$googleAPIKey';
+                                return GestureDetector(
+                                  onTap: ()async{
+                                    showLoadingModal(context);
+                                    fetchDetailPlace(restaurant.place_id!);
+                                    final url = Uri.parse(place_url!);
+                                    await launchUrl(url, mode: LaunchMode.platformDefault);
+                                    Navigator.pop(context);
+                                  },
+                                  child: ItemCard(
+                                    child: Column(
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+                                          child: Image.network(
+                                            photoUrl,
+                                            height: 100,
+                                            width: double.infinity,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          height: 51,
+                                          child: SingleChildScrollView(
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(top: 5, right: 2, left: 5, bottom: 5),
+                                              child: Column(
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Expanded(
+                                                        child: Text(
+                                                          "${restaurant.name}",
+                                                          style: TextStyle(
+                                                            color: const Color.fromARGB(255, 38, 38, 38),
+                                                            fontSize:10,
+                                                            fontWeight: FontWeight.bold,
+                                                            fontFamily: "Clash Display",
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      Expanded(
+                                                        child: Text(
+                                                          "Price Level ${restaurant.priceLevel}",
+                                                          style: TextStyle(
+                                                            color: const Color.fromARGB(255, 0, 0, 0),
+                                                            fontSize:10,
+                                                            fontFamily: "Clash Display",
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+  }
 
   ItemCard TotalNutrisiCard(BuildContext context) {
 
@@ -506,12 +832,12 @@ class _HomePageState extends State<HomePage> {
                             warnaInputText: Colors.white,
                             hintText: "Aku baru saja makan...",
                             warnaHintText: Colors.white,
-                            labelText: "Cek nutrisi makanan",
+                            labelText: "Cari nutrisi makananmu",
                             warnaLabelText: Colors.white,
                           ),
                           SizedBox(height: 20,),
                           customButton(
-                            title: "Lihat",
+                            title: "Cari",
                             warnaBackground: const Color.fromARGB(186, 111, 246, 33),
                             warnaText: Colors.white,
                             tebalFont: FontWeight.bold,

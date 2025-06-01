@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:tugas_akhir/dashboard.dart';
-import 'package:timezone/data/latest.dart' as timezone;
 import 'package:tugas_akhir/page/subpage/login.dart';
 import 'package:tugas_akhir/preferenceService.dart';
 
 void main() async {
   
   WidgetsFlutterBinding.ensureInitialized();
-  timezone.initializeTimeZones();
 
   bool isLoggedIn = await PreferenceService().getLoginStatus();
   runApp(MyApp(isLogin: isLoggedIn,));
