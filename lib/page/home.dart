@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:tugas_akhir/component/Item_card.dart';
 import 'package:tugas_akhir/component/customTextfield.dart';
 import 'package:tugas_akhir/component/custom_button.dart';
@@ -68,6 +69,10 @@ class _HomePageState extends State<HomePage> {
   // Variabel geolocator
   bool serviceEnabled = false;
   LocationPermission permission = LocationPermission.denied;
+
+  // Variabel mata uang
+  String selectedCurrency = 'IDR';
+
 
   @override
   void initState(){
@@ -303,6 +308,32 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+
+  String convertAndFormatHarga(int hargaIDR, String currency) {
+    double converted = hargaIDR.toDouble();
+    String symbol = 'Rp ';
+    String locale = 'id_ID';
+
+    switch (currency) {
+      case 'USD':
+        converted = hargaIDR / 15000; // asumsi 1 USD = 15.000 IDR
+        symbol = '\$';
+        locale = 'en_US';
+        break;
+      case 'EUR':
+        converted = hargaIDR / 16500; // asumsi 1 EUR = 16.500 IDR
+        symbol = '€';
+        locale = 'eu';
+        break;
+      case 'IDR':
+      default:
+        break;
+    }
+
+    return NumberFormat.currency(locale: locale, symbol: symbol, decimalDigits: currency == 'IDR' ? 0 : 2)
+        .format(converted);
+  }
+  
   @override
   Widget build(BuildContext context) {
 
@@ -315,7 +346,7 @@ class _HomePageState extends State<HomePage> {
         body: Center(
           child: Stack(
             children: [
-              CustomVideoPlayer("assets/img/homeBackground.mp4"),
+              CustomVideoPlayer("assets/img/homeBackground2.mp4"),
               Container(
                 height: MediaQuery.sizeOf(context).height,
                 width: double.infinity,
@@ -405,23 +436,52 @@ class _HomePageState extends State<HomePage> {
                         Padding(
                           padding: const EdgeInsets.only(right: 10, left: 10),
                           child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Icon(
-                                Icons.location_on_sharp,
-                                color: const Color.fromARGB(255, 246, 140, 33),
-                                size: 16,
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.location_on_sharp,
+                                    color: const Color.fromARGB(255, 246, 140, 33),
+                                    size: 16,
+                                  ),
+                                  Text(
+                                    "  Restaurant di sekitar anda",
+                                    style: TextStyle(
+                                      color: const Color.fromARGB(255, 255, 255, 255),
+                                      fontSize: 15,
+                                      fontFamily: "Clash Display",
+                                      fontWeight: FontWeight.bold
+                                    ),
+                                  ),
+                                ],
                               ),
-                              Text(
-                                "  Restaurant di sekitar anda",
-                                style: TextStyle(
-                                  color: const Color.fromARGB(255, 255, 255, 255),
-                                  fontSize: 15,
+                              DropdownButton<String>(
+                                menuWidth: 80,
+                                dropdownColor: const Color.fromARGB(223, 246, 143, 33),
+
+                                value: selectedCurrency,
+                                style: const TextStyle(
+                                  color: Color.fromARGB(255, 255, 255, 255),
                                   fontFamily: "Clash Display",
-                                  fontWeight: FontWeight.bold
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
                                 ),
-                              ),
+                                items: const [
+                                  DropdownMenuItem(value: 'IDR', child: Text('IDR')),
+                                  DropdownMenuItem(value: 'EUR', child: Text('EUR')),
+                                  DropdownMenuItem(value: 'USD', child: Text('USD')),
+                                ],
+                                onChanged: (value) {
+                                  setState(() {
+                                    selectedCurrency = value!;
+                                    print(selectedCurrency);
+                                  });
+                                },
+                              )
                             ],
                           ),
+                          
                         ),
                         Divider(),
                         SizedBox(height: 10,),
@@ -470,7 +530,7 @@ class _HomePageState extends State<HomePage> {
                                 return GestureDetector(
                                   onTap: ()async{
                                     showLoadingModal(context);
-                                    fetchDetailPlace(restaurant.place_id!);
+                                    await fetchDetailPlace(restaurant.place_id!);
                                     final url = Uri.parse(place_url!);
                                     await launchUrl(url, mode: LaunchMode.platformDefault);
                                     Navigator.pop(context);
@@ -509,17 +569,62 @@ class _HomePageState extends State<HomePage> {
                                                       ),
                                                     ],
                                                   ),
+                                                  SizedBox(
+                                                    width: double.infinity,
+                                                    child: Expanded(
+                                                      child: Row(
+                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        children: [
+                                                          Row(
+                                                            children: [
+                                                              Text(
+                                                                "${restaurant.rating}",
+                                                                style: TextStyle(
+                                                                  color: const Color.fromARGB(255, 0, 0, 0),
+                                                                  fontSize:10,
+                                                                  fontFamily: "Clash Display",
+                                                                ),
+                                                              ),
+                                                              Icon(Icons.star, size: 10, color: Colors.amber,),
+                                                            ],
+                                                          ),
+                                                          Text(
+                                                            "${restaurant.userRatingsTotal} Ulasan",
+                                                            style: TextStyle(
+                                                              color: const Color.fromARGB(255, 0, 0, 0),
+                                                              fontSize:10,
+                                                              fontFamily: "Clash Display",
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  SizedBox(height: 5,),
                                                   Row(
                                                     children: [
                                                       Expanded(
                                                         child: Text(
-                                                          "Price Level ${restaurant.priceLevel}",
+                                                          "Range harga",
                                                           style: TextStyle(
                                                             color: const Color.fromARGB(255, 0, 0, 0),
                                                             fontSize:10,
                                                             fontFamily: "Clash Display",
                                                           ),
                                                         ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      Expanded(
+                                                      child: Text("${convertAndFormatHarga(restaurant.harga!, selectedCurrency)}",
+                                                        style: TextStyle(
+                                                        color: const Color.fromARGB(255, 1, 203, 55),
+                                                        fontSize: 10,
+                                                        fontFamily: "Clash Display",
+                                                        ),
+                                                      ),
                                                       ),
                                                     ],
                                                   ),
@@ -563,13 +668,24 @@ class _HomePageState extends State<HomePage> {
             ),
             SizedBox(height: 10,),
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Image.asset(
-                  "assets/img/kalori_icon.png",
-                  width: 15,
+                Row(
+                  children: [
+                    Image.asset(
+                      "assets/img/kalori_icon.png",
+                      width: 15,
+                    ),
+                    Text("Kalori total",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontFamily: "Clash Display"
+                      ),
+                    ),
+                  ],
                 ),
-                Text("Kalori total $total_kalori kkal",
+                Text("$total_kalori kkal",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 13,
@@ -579,13 +695,24 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Image.asset(
-                  "assets/img/kolestrol_icon.png",
-                  width: 15,
+                Row(
+                  children: [
+                    Image.asset(
+                      "assets/img/kolestrol_icon.png",
+                      width: 15,
+                    ),
+                    Text("Kolestrol total",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontFamily: "Clash Display"
+                      ),
+                    ),
+                  ],
                 ),
-                Text("Kolestrol total $total_kolestrol mg",
+                Text("$total_kolestrol mg",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 13,
@@ -595,13 +722,24 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Image.asset(
-                  "assets/img/protein_icon.png",
-                  width: 15,
+                Row(
+                  children: [
+                    Image.asset(
+                      "assets/img/protein_icon.png",
+                      width: 15,
+                    ),
+                    Text("Protein total",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontFamily: "Clash Display"
+                      ),
+                    ),
+                  ],
                 ),
-                Text("Protein total $total_protein g",
+                Text("$total_protein g",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 13,
@@ -611,13 +749,25 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Image.asset(
-                  "assets/img/salt_icon.png",
-                  width: 15,
+                Row(
+                  children: [
+                    Image.asset(
+                      "assets/img/salt_icon.png",
+                      width: 15,
+                    ),
+                    Text("Sodium total",
+                    overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontFamily: "Clash Display"
+                      ),
+                    ),
+                  ],
                 ),
-                Text("Sodium total $total_sodium mg",
+                 Text("$total_sodium mg",
                 overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: Colors.white,
@@ -629,7 +779,7 @@ class _HomePageState extends State<HomePage> {
             ),
             SizedBox(height: 20,),
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text("Kalori yang anda butuhkan dalam sehari:",
                 overflow: TextOverflow.ellipsis,
@@ -724,55 +874,135 @@ class _HomePageState extends State<HomePage> {
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.center,
                                           children: [
-                                            Text("${food.foodName.toUpperCase()}", style: TextStyle(fontWeight: FontWeight.bold),),
+                                            Text("${food.foodName.toUpperCase()}", 
+                                              style: TextStyle(
+                                                color: const Color.fromARGB(255, 0, 0, 0),
+                                                fontSize:14,
+                                                fontFamily: "Clash Display",
+                                                fontWeight: FontWeight.bold
+                                              ),
+                                            ),
                                             Divider(thickness: 2, color: Colors.black,),
                                             SizedBox(height: 5,),
                                             Row(
                                               mainAxisAlignment: MainAxisAlignment.center,
                                               children: [
-                                                Text("Qty ", style: TextStyle(fontWeight: FontWeight.bold),),
-                                                Text("& Unit", style: TextStyle(fontWeight: FontWeight.bold),),
+                                                Text("Qty &", 
+                                                  style: TextStyle(
+                                                    color: const Color.fromARGB(255, 0, 0, 0),
+                                                    fontSize:12,
+                                                    fontFamily: "Clash Display",
+                                                    fontWeight: FontWeight.bold
+                                                  ),
+                                                ),
+                                                Text("Unit ", 
+                                                  style: TextStyle(
+                                                    color: const Color.fromARGB(255, 0, 0, 0),
+                                                    fontSize:12,
+                                                    fontFamily: "Clash Display",
+                                                    fontWeight: FontWeight.bold
+                                                  ),
+                                                ),
                                               ],
                                             ),
-                                            SizedBox(
-                                              width:170 ,
-                                              child: Row(
-                                                mainAxisAlignment: MainAxisAlignment.center,
-                                                children: [
-                                                  Text("${food.servingQty}", style: TextStyle(fontWeight: FontWeight.bold),),
-                                                  Expanded(child: Text(food.servingUnit, overflow: TextOverflow.ellipsis))
-                                                ],
+                                            Text("${food.servingQty}  ",
+                                             style: TextStyle(
+                                                color: const Color.fromARGB(255, 0, 0, 0),
+                                                fontSize:15,
+                                                fontFamily: "Clash Display",
+                                              ),
+                                            ),
+                                            Text(food.servingUnit, overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                                color: const Color.fromARGB(255, 0, 0, 0),
+                                                fontSize:12,
+                                                fontFamily: "Clash Display",
                                               ),
                                             ),
                                             SizedBox(height: 20,),
-                                            Text("Kandungan Nutrisi", style: TextStyle(fontWeight: FontWeight.bold),),
+                                            Text("Kandungan Nutrisi",
+                                            style: TextStyle(
+                                                color: const Color.fromARGB(255, 0, 0, 0),
+                                                fontSize:12,
+                                                fontFamily: "Clash Display",
+                                                fontWeight: FontWeight.bold
+                                              ),
+                                            ),
                                             SizedBox(height: 5,),
                                             Row(
                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                               children: [
-                                                Text("Kalori"),
-                                                Text("${food.calories} kkal")
+                                                Text("Kalori",
+                                                    style: TextStyle(
+                                                    color: const Color.fromARGB(255, 0, 0, 0),
+                                                    fontSize:12,
+                                                    fontFamily: "Clash Display",
+                                                  ),
+                                                ),
+                                                Text("${food.calories} kkal",
+                                                style: TextStyle(
+                                                color: const Color.fromARGB(255, 0, 0, 0),
+                                                fontSize:12,
+                                                fontFamily: "Clash Display",
+                                              ),
+                                            ),
                                               ],
                                             ),
                                             Row(
                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                               children: [
-                                                Text("Kolestrol"),
-                                                Text("${food.cholesterol} mg")
+                                                Text("Kolestrol",
+                                                    style: TextStyle(
+                                                    color: const Color.fromARGB(255, 0, 0, 0),
+                                                    fontSize:12,
+                                                    fontFamily: "Clash Display",
+                                                  ),
+                                                ),
+                                                Text("${food.cholesterol} mg",
+                                                    style: TextStyle(
+                                                    color: const Color.fromARGB(255, 0, 0, 0),
+                                                    fontSize:12,
+                                                    fontFamily: "Clash Display",
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                             Row(
                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                               children: [
-                                                Text("Protein"),
-                                                Text("${food.protein} gr")
+                                                Text("Protein",
+                                                    style: TextStyle(
+                                                    color: const Color.fromARGB(255, 0, 0, 0),
+                                                    fontSize:12,
+                                                    fontFamily: "Clash Display",
+                                                  ),
+                                                ),
+                                                Text("${food.protein} gr",
+                                                    style: TextStyle(
+                                                    color: const Color.fromARGB(255, 0, 0, 0),
+                                                    fontSize:12,
+                                                    fontFamily: "Clash Display",
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                             Row(
                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                               children: [
-                                                Text("Sodium"),
-                                                Text("${food.protein} mg")
+                                                Text("Sodium",
+                                                    style: TextStyle(
+                                                    color: const Color.fromARGB(255, 0, 0, 0),
+                                                    fontSize:12,
+                                                    fontFamily: "Clash Display",
+                                                  ),
+                                                ),
+                                                Text("${food.protein} mg",
+                                                    style: TextStyle(
+                                                    color: const Color.fromARGB(255, 0, 0, 0),
+                                                    fontSize:12,
+                                                    fontFamily: "Clash Display",
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                           ],

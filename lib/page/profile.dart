@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:timezone/timezone.dart' as tz;
 import 'package:tugas_akhir/component/Item_card.dart';
 import 'package:tugas_akhir/component/custom_button.dart';
 import 'package:tugas_akhir/component/theme/theme.dart';
 import 'package:tugas_akhir/component/video_player.dart';
+import 'package:tugas_akhir/main.dart';
 import 'package:tugas_akhir/preferenceService.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -27,6 +29,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
 
   String BMI_icon_path = "assets/img/normal_person_icon.png";
+
+  String selectedTimezone = "WIB";
 
   @override
   void initState() {
@@ -85,13 +89,14 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       body: Stack(
         children: [
-          CustomVideoPlayer("assets/img/profileBackground.mp4"),
+          CustomVideoPlayer("assets/img/profileBackground2.mp4"),
           Container(
             decoration: BoxDecoration(
               color: const Color.fromARGB(187, 24, 10, 10)
@@ -112,10 +117,96 @@ class _ProfilePageState extends State<ProfilePage> {
       Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          BMICard(context)
+          JamCard(),
+          SizedBox(height: 10,),
+          BMICard(context),
+          SizedBox(height: 20,),
+          customButton(
+            title: "remind me",
+            fungsiKetikaDitekan: (){},
+          )
         ],
       ),
     );
+  }
+
+  DateTime convertToTimezone(DateTime utcTime, String timezone) {
+    switch (timezone) {
+      case 'WIB': return utcTime.add(Duration(hours: 7));
+      case 'WITA': return utcTime.add(Duration(hours: 8));
+      case 'WIT': return utcTime.add(Duration(hours: 9));
+      case 'LONDON': return utcTime; // UTC == London time (tanpa daylight saving)
+      default: return utcTime;
+    }
+  }
+
+  String formatTime(DateTime time) {
+    return "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:${time.second.toString().padLeft(2, '0')}";
+  }
+
+
+
+  ItemCard JamCard() {
+    return ItemCard(
+          backgroundColor: const Color.fromARGB(149, 81, 165, 255),
+          height: 70,
+          width: double.infinity,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 20, right: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.access_time, color: Colors.white, size: 15),
+                    SizedBox(width: 10,),
+                    StreamBuilder<DateTime>(
+                      stream: Stream.periodic(Duration(seconds: 1), (_) => DateTime.now().toUtc()),
+                      builder: (context, snapshot) {
+                        final utcNow = snapshot.data ?? DateTime.now().toUtc();
+                        final convertedTime = convertToTimezone(utcNow, selectedTimezone);
+                        final formattedTime = formatTime(convertedTime);
+
+                        return Text(
+                          "$selectedTimezone, $formattedTime",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            fontFamily: "Clash Display",
+                          ),
+                        );
+                      },
+                    )
+
+                  ],
+                ),
+                DropdownButton<String>(
+                  menuWidth: 100,
+                  dropdownColor: const Color.fromARGB(223, 246, 143, 33),
+                  value: selectedTimezone,
+                  style: const TextStyle(
+                    color: Color.fromARGB(255, 255, 255, 255),
+                    fontFamily: "Clash Display",
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'WIB', child: Text('WIB')),
+                    DropdownMenuItem(value: 'WITA', child: Text('WITA')),
+                    DropdownMenuItem(value: 'WIT', child: Text('WIT')),
+                    DropdownMenuItem(value: 'LONDON', child: Text('LONDON')),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      selectedTimezone = value!;
+                    });
+                  },
+                )
+              ],
+            ),
+          ),
+        );
   }
 
     ItemCard BMICard(BuildContext context) {

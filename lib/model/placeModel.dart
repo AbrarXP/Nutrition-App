@@ -1,4 +1,7 @@
 
+import 'dart:ffi';
+import 'dart:math';
+
 class PlaceData {
   String? place_id;
   String? name;
@@ -6,6 +9,7 @@ class PlaceData {
   double? rating;
   int? userRatingsTotal;
   int? priceLevel;
+  int? harga;
 
   PlaceData({
       this.place_id,
@@ -13,7 +17,8 @@ class PlaceData {
       this.photos,
       this.rating,
       this.userRatingsTotal,
-      this.priceLevel
+      this.priceLevel,
+      this.harga
   });
 
   PlaceData.fromJson(Map<String, dynamic> json) {
@@ -28,7 +33,12 @@ class PlaceData {
     rating = (json['rating'] as num).toDouble();
     userRatingsTotal = json['user_ratings_total'];
     priceLevel = json['price_level'];
+    harga = Random().nextInt(500000) + 10000; // Angka random sj karena tdk di sediakan sama gogel
+
   }
+
+
+
 }
 
 class Photos {
