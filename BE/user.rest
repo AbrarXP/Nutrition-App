@@ -4,8 +4,8 @@ Content-Type: application/json
 
 {
   "username": "abrar",
-  "email": "test2ussess2rs22@example.com",
-  "password": "123"
+  "email": "test2ussdsess2rs22@example.com",
+  "password": "abc"
 }
 
 ###
@@ -15,8 +15,8 @@ POST http://localhost:5000/api/login
 Content-Type: application/json
 
 {
-  "username": "admin4",
-  "password": "bomboclat123"
+  "username": "abrar",
+  "password": "abc"
 }
 
 ### GET semua user
@@ -32,13 +32,13 @@ Content-Type: application/json
 ###
 
 ### PUT update user
-PUT http://localhost:5000/api/users/1`
+PUT http://localhost:5000/api/users/13`
 Content-Type: application/json
 
 {
-  "username": "admin",
-  "email": "upsdaed232@example.com",
-  "password": "123",
+  "username": "abrar",
+  "email": "erickolim@gmail.com",
+  "password": "abc",
   "bb": 80,
   "tb": 180,
   "usia": 21,
@@ -48,5 +48,5 @@ Content-Type: application/json
 ###
 
 ### DELETE user
-DELETE http://localhost:5000/api/users/10
+DELETE http://localhost:5000/api/users/12
 Content-Type: application/json

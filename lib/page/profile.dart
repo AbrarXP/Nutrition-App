@@ -1,4 +1,7 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:tugas_akhir/component/Item_card.dart';
 import 'package:tugas_akhir/component/custom_button.dart';
@@ -32,11 +35,29 @@ class _ProfilePageState extends State<ProfilePage> {
 
   String selectedTimezone = "WIB";
 
+  double lastX = 0.0;
+  double lastY = 0.0;
+  double lastZ = 0.0;
+
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     loadUsername();
+    
+    accelerometerEvents.listen((e) {
+      double dx = (e.x - lastX).abs();
+      double dy = (e.y - lastY).abs();
+      double dz = (e.z - lastZ).abs();
+      double delta = sqrt(dx*dx + dy*dy + dz*dz);
+
+      // Update nilai terakhir setelah cek
+      setState(() {
+        lastX = e.x;
+        lastY = e.y;
+        lastZ = e.z;
+      });
+    });
   }
 
   void _showSnackBar(String message) {
@@ -117,17 +138,44 @@ class _ProfilePageState extends State<ProfilePage> {
       Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          AcceleromeneterCard(),
+          SizedBox(height: 10,),
           JamCard(),
           SizedBox(height: 10,),
           BMICard(context),
-          SizedBox(height: 20,),
-          customButton(
-            title: "remind me",
-            fungsiKetikaDitekan: (){},
-          )
         ],
       ),
     );
+  }
+
+  ItemCard AcceleromeneterCard() {
+    return ItemCard(
+          backgroundColor: const Color.fromARGB(149, 81, 165, 255),
+          height: 70,
+          width: double.infinity,
+          child: Padding(
+            padding: const EdgeInsets.only(right: 10, left: 10),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text("Accereometer Sensor",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontFamily: "Clash Display",
+                  ),
+                ),
+                 Text("Last X: ${lastX.toStringAsFixed(2)}, Y: ${lastY.toStringAsFixed(2)}, Z: ${lastZ.toStringAsFixed(2)}",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontFamily: "Clash Display",
+                  ),
+                 ),
+              ],
+            ),
+          )
+        );
   }
 
   DateTime convertToTimezone(DateTime utcTime, String timezone) {

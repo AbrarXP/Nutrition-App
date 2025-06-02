@@ -605,7 +605,7 @@ class _HomePageState extends State<HomePage> {
                                                     children: [
                                                       Expanded(
                                                         child: Text(
-                                                          "Range harga",
+                                                          "Harga rata rata",
                                                           style: TextStyle(
                                                             color: const Color.fromARGB(255, 0, 0, 0),
                                                             fontSize:10,
@@ -905,18 +905,30 @@ class _HomePageState extends State<HomePage> {
                                                 ),
                                               ],
                                             ),
-                                            Text("${food.servingQty}  ",
-                                             style: TextStyle(
-                                                color: const Color.fromARGB(255, 0, 0, 0),
-                                                fontSize:15,
-                                                fontFamily: "Clash Display",
+                                            SizedBox(
+                                              width: double.infinity,
+                                              child: Expanded(
+                                                child: Text("${food.servingQty}  ",
+                                                textAlign: TextAlign.center,
+                                                 style: TextStyle(
+                                                    color: const Color.fromARGB(255, 0, 0, 0),
+                                                    fontSize:15,
+                                                    fontFamily: "Clash Display",
+                                                  ),
+                                                ),
                                               ),
                                             ),
-                                            Text(food.servingUnit, overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                                color: const Color.fromARGB(255, 0, 0, 0),
-                                                fontSize:12,
-                                                fontFamily: "Clash Display",
+                                            SizedBox(
+                                              width: double.infinity,
+                                              child: Expanded(
+                                                child: Text(food.servingUnit,
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                    color: const Color.fromARGB(255, 0, 0, 0),
+                                                    fontSize:12,
+                                                    fontFamily: "Clash Display",
+                                                  ),
+                                                ),
                                               ),
                                             ),
                                             SizedBox(height: 20,),
@@ -939,13 +951,19 @@ class _HomePageState extends State<HomePage> {
                                                     fontFamily: "Clash Display",
                                                   ),
                                                 ),
-                                                Text("${food.calories} kkal",
-                                                style: TextStyle(
-                                                color: const Color.fromARGB(255, 0, 0, 0),
-                                                fontSize:12,
-                                                fontFamily: "Clash Display",
-                                              ),
-                                            ),
+                                                SizedBox(
+                                                  width: 80,
+                                                  child: Expanded(
+                                                    child: Text("${food.calories} kkal",
+                                                      style: TextStyle(
+                                                        overflow: TextOverflow.ellipsis,
+                                                        color: const Color.fromARGB(255, 0, 0, 0),
+                                                        fontSize:12,
+                                                        fontFamily: "Clash Display",
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                             Row(
@@ -958,11 +976,17 @@ class _HomePageState extends State<HomePage> {
                                                     fontFamily: "Clash Display",
                                                   ),
                                                 ),
-                                                Text("${food.cholesterol} mg",
-                                                    style: TextStyle(
-                                                    color: const Color.fromARGB(255, 0, 0, 0),
-                                                    fontSize:12,
-                                                    fontFamily: "Clash Display",
+                                                SizedBox(
+                                                  width: 80,
+                                                  child: Expanded(
+                                                    child: Text("${food.cholesterol} mg",
+                                                        style: TextStyle(
+                                                        overflow: TextOverflow.ellipsis,
+                                                        color: const Color.fromARGB(255, 0, 0, 0),
+                                                        fontSize:12,
+                                                        fontFamily: "Clash Display",
+                                                      ),
+                                                    ),
                                                   ),
                                                 ),
                                               ],
@@ -977,11 +1001,17 @@ class _HomePageState extends State<HomePage> {
                                                     fontFamily: "Clash Display",
                                                   ),
                                                 ),
-                                                Text("${food.protein} gr",
-                                                    style: TextStyle(
-                                                    color: const Color.fromARGB(255, 0, 0, 0),
-                                                    fontSize:12,
-                                                    fontFamily: "Clash Display",
+                                                SizedBox(
+                                                  width: 80,
+                                                  child: Expanded(
+                                                    child: Text("${food.protein} gr",
+                                                        style: TextStyle(
+                                                          overflow: TextOverflow.ellipsis,
+                                                        color: const Color.fromARGB(255, 0, 0, 0),
+                                                        fontSize:12,
+                                                        fontFamily: "Clash Display",
+                                                      ),
+                                                    ),
                                                   ),
                                                 ),
                                               ],
@@ -996,11 +1026,17 @@ class _HomePageState extends State<HomePage> {
                                                     fontFamily: "Clash Display",
                                                   ),
                                                 ),
-                                                Text("${food.protein} mg",
-                                                    style: TextStyle(
-                                                    color: const Color.fromARGB(255, 0, 0, 0),
-                                                    fontSize:12,
-                                                    fontFamily: "Clash Display",
+                                                SizedBox(
+                                                  width: 80,
+                                                  child: Expanded(
+                                                    child: Text("${food.sodium} mg",
+                                                        style: TextStyle(
+                                                          overflow: TextOverflow.ellipsis,
+                                                        color: const Color.fromARGB(255, 0, 0, 0),
+                                                        fontSize:12,
+                                                        fontFamily: "Clash Display",
+                                                      ),
+                                                    ),
                                                   ),
                                                 ),
                                               ],

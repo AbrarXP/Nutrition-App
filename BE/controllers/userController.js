@@ -131,8 +131,8 @@ export const updateUser = async (req, res) => {
     if (!user) return res.status(404).json({ msg: "User tidak ditemukan" });
 
     // Cek apakah email sudah terdaftar
-    const existingEmail = await User.findOne({ where: { email } });
-    if (existingEmail) return res.status(400).json({status: "Error", msg: "Email sudah digunakan" });
+    // const existingEmail = await User.findOne({ where: { email } });
+    // if (existingEmail) return res.status(400).json({status: "Error", msg: "Email sudah digunakan" });
         
     // Cek apakah username sudah terdaftar
     const existingUsername = await User.findOne({ where: { username } });
@@ -148,7 +148,7 @@ export const updateUser = async (req, res) => {
 
     user.username = username || user.username;
     user.email = email || user.email;
-    user.password = password || user.password;
+    user.password = caesarEncrypt(password, user.shift)|| caesarEncrypt(user.password, user.shift);
     user.bb = bb || user.bb;
     user.tb = tb || user.tb;
     user.usia = usia || user.usia;

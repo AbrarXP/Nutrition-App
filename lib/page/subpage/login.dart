@@ -7,6 +7,7 @@ import 'package:tugas_akhir/component/customTextfield.dart';
 import 'package:tugas_akhir/component/custom_button.dart';
 import 'package:tugas_akhir/component/text/headerText.dart';
 import 'package:tugas_akhir/component/theme/theme.dart';
+import 'package:tugas_akhir/component/video_player.dart';
 import 'package:tugas_akhir/dashboard.dart';
 import 'package:tugas_akhir/preferenceService.dart';
 
@@ -23,7 +24,7 @@ class _LoginPageState extends State<LoginPage> {
   TextEditingController user = TextEditingController();
   TextEditingController pass = TextEditingController();
 
-  final url = "http://192.168.0.105:5000/api/login";
+  final url = "http://192.168.0.101:5000/api/login";
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -88,7 +89,7 @@ class _LoginPageState extends State<LoginPage> {
         _showSnackBar(msg);
 
 
-        Navigator.push(
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => MyHomePage()),
         );
@@ -115,12 +116,7 @@ class _LoginPageState extends State<LoginPage> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.network(
-                "https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExb3hjMHgzYTVrZTNnY3V0em95a3BtdjI1MTUwMW9renZuMHppYnRuNiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/tolaGqMj46lwxzTurd/giphy.gif",
-                fit: BoxFit.fitHeight,
-                height:MediaQuery.sizeOf(context).height,
-                width: double.infinity,
-              ),
+              CustomVideoPlayer("assets/img/loginBackground.mp4"),
               Container(
                 height: MediaQuery.sizeOf(context).height,
                 width: double.infinity,
