@@ -1,6 +1,6 @@
-# tugas_akhir
+# NUTRITION APP
 
-A new Flutter project.
+EDUCATIONAL AND NON PROFIT PURPOSE ONLY PROJECT
 
 ## Getting Started
 
